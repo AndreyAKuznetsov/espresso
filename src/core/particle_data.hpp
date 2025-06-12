@@ -185,7 +185,7 @@ void set_particle_vs_relative(int part, int vs_relative_to, double vs_distance,
 #endif
 
 #ifdef EGG_MODEL
-void set_particle_egg_model_params(int part, bool use_egg_model, double egg_gamma, double aniso_energy);
+void set_particle_egg_model_params(int part, bool use_egg_model, double egg_gamma, double aniso_energy, double prec_coef);
 void set_particle_axis_quat_body(int part, Utils::Quaternion<double> const &axis_quat) ;
 
 #endif // EGG_MODEL
@@ -324,10 +324,13 @@ inline Utils::Quaternion<double> get_particle_axis_quat_body(Particle const *p) 
 inline void get_particle_egg_model_params(Particle const *p,
                                                           int &use_egg_model,
                                                           double & egg_gamma,
-                                                          double & aniso_energy) {
+                                                          double & aniso_energy,
+                                                          double & prec_coef
+                                                        ) {
   use_egg_model = p->egg_model_params().use_egg_model;
   egg_gamma = p->egg_model_params().egg_gamma;
   aniso_energy = p->egg_model_params().aniso_energy;
+  prec_coef = p->egg_model_params().prec_coef;
 }
 
 inline Utils::Vector3d get_particle_axis(Particle const *p) {

@@ -522,13 +522,14 @@ void set_particle_axis_quat_body(int part, Utils::Quaternion<double> const &axis
       &ParticleProperties::egg_model_params>(part, egg_model_params);
 }
 
-void set_particle_egg_model_params(int part, bool use_egg_model, double egg_gamma, double aniso_energy) {
+void set_particle_egg_model_params(int part, bool use_egg_model, double egg_gamma, double aniso_energy, double prec_coef) {
 
   auto egg_model_params = get_particle_data(part).egg_model_params();
   
   egg_model_params.use_egg_model = use_egg_model;
   egg_model_params.egg_gamma = egg_gamma;
   egg_model_params.aniso_energy = aniso_energy;
+  egg_model_params.prec_coef = prec_coef;
 
   mpi_update_particle_property<
       ParticleProperties::EggModelParameters,

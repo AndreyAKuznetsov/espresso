@@ -26,14 +26,16 @@ inline void egg_model_calc_internal_magnetic_torque(Particle &p) {
         Utils::Vector3d vec_e = p.calc_director();
         Utils::Vector3d vec_n = p.calc_axis();
 
-        auto torque = 2 * p.aniso_energy() * vector_product(vec_e,vec_n) * (vec_e * vec_n);
+        auto aniso_field = 2 * p.aniso_energy() * vec_n * (vec_e * vec_n);
+        auto torque = vector_product(vec_e,aniso_field);
 
         torque = convert_vector_space_to_body(p, torque);
-
+        aniso_field = convert_vector_space_to_body(p, aniso_field);
         // torque = mask(p.rotation(), torque);
 
         p.internal_magnetic_torque() = torque;
-        
+        p.internal_magnetic_field() = aniso_field;
+
 }
 
 // called from brownian_dynamics_propagator()
@@ -48,7 +50,7 @@ inline void egg_model_bd_internal_rotation(BrownianThermostat const &brownian, P
 
     // if (p.can_rotate_around(j)) {
 
-     dphi[j] = (p.torque()[j] + p.internal_magnetic_torque()[j]) * dt * gamma_inv + noise[j] * sqrt(2 * dt * kT * gamma_inv);
+     dphi[j] = ( p.torque()[j] + p.internal_magnetic_torque()[j] + p.prec_coef()*p.internal_magnetic_field()[j]) * dt * gamma_inv + noise[j] * sqrt(2 * dt * kT * gamma_inv);
 
      // }
 

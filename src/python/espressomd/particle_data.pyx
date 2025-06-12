@@ -775,6 +775,8 @@ cdef class ParticleHandle:
 
                 aniso_energy : :obj:`float`
 
+                prec_coef : :obj:`float`
+
                 .. note::
                 This needs the feature ``EGG_MODEL``
 
@@ -783,22 +785,26 @@ cdef class ParticleHandle:
                 def __set__(self, _params):
                     
 
-                    # if len(x) != 3:
+                    # if len(x) != 4:
                     #    raise ValueError(
-                    #        "egg_mode_params needs input in the form [use_egg_model_flag, egg_gamma, aniso_energy].")
-                    #use_egg_model_flag, egg_gamma, aniso_energy = x
+                    #        "egg_mode_params needs input in the form [use_egg_model_flag, egg_gamma, aniso_energy, prec_coef].")
+                    #use_egg_model_flag, egg_gamma, aniso_energy, prec_coef = x
                     #check_type_or_throw_except(
                     #    use_egg_model_flag, 1, int, "use_egg_model_flag has to be given as a bool.")
                     #check_type_or_throw_except(
                     #    egg_gamma, 1, float, "egg_gamma has to be given as a float.")
                     #check_type_or_throw_except(
                     #    aniso_energy, 1, float, "aniso_energy has to be given as a float.")
+                    #check_type_or_throw_except(
+                    #    prec_coef, 1, float, "prec_coef has to be given as a float.")
                     
                     self.update_particle_data()
                     cdef int use_egg_model = 0
                     cdef double egg_gamma = 1.
                     cdef double aniso_energy = 0.
-                    get_particle_egg_model_params(self.particle_data, use_egg_model, egg_gamma, aniso_energy)
+                    cdef double prec_coef = 0.
+
+                    get_particle_egg_model_params(self.particle_data, use_egg_model, egg_gamma, aniso_energy, prec_coef)
 
                     if "use_egg_model" in _params:
                         check_type_or_throw_except(
@@ -812,26 +818,33 @@ cdef class ParticleHandle:
                         check_type_or_throw_except(
                             _params["aniso_energy"], 1, float, "aniso_energy has to be given as a float.")
                         aniso_energy = _params["aniso_energy"]
+                    if "prec_coef" in _params:
+                        check_type_or_throw_except(
+                            _params["prec_coef"], 1, float, "prec_coef has to be given as a float.")
+                        prec_coef = _params["prec_coef"]
 
-                    set_particle_egg_model_params(self._id, use_egg_model, egg_gamma, aniso_energy)
+                    set_particle_egg_model_params(self._id, use_egg_model, egg_gamma, aniso_energy,prec_coef)
 
                 def __get__(self):
                     self.update_particle_data()
                     cdef int use_egg_model = 0
                     cdef double egg_gamma = 1.
                     cdef double aniso_energy = 0.
-                    get_particle_egg_model_params(self.particle_data, use_egg_model, egg_gamma, aniso_energy)
+                    cdef double prec_coef = 0.
+                    get_particle_egg_model_params(self.particle_data, use_egg_model, egg_gamma, aniso_energy, prec_coef)
 
                     egg_model_params = {
                         "use_egg_model": use_egg_model,
                         "egg_gamma": egg_gamma,
-                        "aniso_energy": aniso_energy
+                        "aniso_energy": aniso_energy,
+                        "prec_coef": prec_coef
                     }
 
                     return egg_model_params
 
             def get_axis(self):
-                cdef Vector3d axis = get_particle_axis(self.particle_data)
+                cdef Vector3d axis
+                axis = get_particle_axis(self.particle_data)
                 return array_locked([axis[0],axis[1],axis[2]])
 
     IF DIPOLES:

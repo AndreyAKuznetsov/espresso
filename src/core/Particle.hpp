@@ -186,8 +186,10 @@ struct ParticleProperties {
 
     double egg_gamma = 1;
     double aniso_energy = 0;
+    double prec_coef = 0;
 
     Utils::Vector3d internal_magnetic_torque = {0.,0.,0.};
+    Utils::Vector3d internal_magnetic_field = {0.,0.,0.};
 
     /** Orientation of the virtual particle easy axis in the body fixed frame. */
     Utils::Quaternion<double> axis_quat_body_fixed = Utils::Quaternion<double>::identity();
@@ -199,9 +201,11 @@ struct ParticleProperties {
       ar &use_egg_model;
       ar &egg_gamma;
       ar &aniso_energy;
+      ar &prec_coef;
       ar &axis_quat_body_fixed;  
       ar &axis_quat_space_fixed;  
       ar &internal_magnetic_torque;   
+      ar &internal_magnetic_field;   
     }
   } egg_model_params;
 
@@ -566,10 +570,14 @@ public:
   auto &egg_model_params() { return p.egg_model_params; }
   auto const &internal_magnetic_torque() const { return p.egg_model_params.internal_magnetic_torque; }
   auto &internal_magnetic_torque() { return p.egg_model_params.internal_magnetic_torque; }
+  auto const &internal_magnetic_field() const { return p.egg_model_params.internal_magnetic_field; }
+  auto &internal_magnetic_field() { return p.egg_model_params.internal_magnetic_field; }
   auto const &aniso_energy() const { return p.egg_model_params.aniso_energy; }
   auto &aniso_energy() { return p.egg_model_params.aniso_energy; }
   auto const &egg_gamma() const { return p.egg_model_params.egg_gamma; }
   auto &egg_gamma() { return p.egg_model_params.egg_gamma; }
+  auto const &prec_coef() const { return p.egg_model_params.prec_coef; }
+  auto &prec_coef() { return p.egg_model_params.prec_coef; }
 #endif // EGG_MODEL
 #else
   constexpr auto is_virtual() const { return p.is_virtual; }

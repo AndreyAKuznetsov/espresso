@@ -135,10 +135,10 @@ cdef extern from "particle_data.hpp":
         void set_particle_vs_quat(int part, const Quaternion[double] & vs_quat)
 
         IF EGG_MODEL:
-            void set_particle_egg_model_params(int part, int use_egg_model, double egg_gamma, double aniso_energy)        
+            void set_particle_egg_model_params(int part, int use_egg_model, double egg_gamma, double aniso_energy, double prec_coef)        
             void set_particle_axis_quat_body(int part, const Quaternion[double] & axis_quat)
 
-            void get_particle_egg_model_params(const particle * p, int & use_egg_model, double & egg_gamma, double & aniso_energy)
+            void get_particle_egg_model_params(const particle * p, int & use_egg_model, double & egg_gamma, double & aniso_energy, double & prec_coef)
             Quaternion[double] get_particle_axis_quat_body(const particle * p)
             Vector3d get_particle_axis(const particle * p)
 
