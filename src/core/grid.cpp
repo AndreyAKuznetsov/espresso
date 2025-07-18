@@ -27,6 +27,7 @@
 #include "grid.hpp"
 
 #include "communication.hpp"
+#include "errorhandling.hpp"
 #include "event.hpp"
 #include "particle_data.hpp"
 
@@ -38,7 +39,7 @@
 #include <mpi.h>
 
 #include <cmath>
-#include <cstddef>
+#include <stdexcept>
 
 BoxGeometry box_geo;
 LocalBox<double> local_geo;
@@ -51,7 +52,7 @@ int map_position_node_array(const Utils::Vector3d &pos) {
   auto const f_pos = folded_position(pos, box_geo);
 
   Utils::Vector3i im;
-  for (int i = 0; i < 3; i++) {
+  for (unsigned int i = 0; i < 3; i++) {
     im[i] = static_cast<int>(std::floor(f_pos[i] / local_geo.length()[i]));
     im[i] = boost::algorithm::clamp(im[i], 0, node_grid[i] - 1);
   }
@@ -74,13 +75,13 @@ LocalBox<double> regular_decomposition(const BoxGeometry &box,
   Utils::Vector3d local_length;
   Utils::Vector3d my_left;
 
-  for (int i = 0; i < 3; i++) {
+  for (unsigned int i = 0; i < 3; i++) {
     local_length[i] = box.length()[i] / node_grid_par[i];
     my_left[i] = node_pos[i] * local_length[i];
   }
 
   Utils::Array<int, 6> boundaries;
-  for (std::size_t dir = 0; dir < 3; dir++) {
+  for (unsigned int dir = 0; dir < 3; dir++) {
     /* left boundary ? */
     boundaries[2 * dir] = (node_pos[dir] == 0);
     /* right boundary ? */
@@ -106,9 +107,25 @@ void grid_changed_n_nodes() {
   grid_changed_box_l(box_geo);
 }
 
+void mpi_set_box_length_local(const Utils::Vector3d &length) {
+  box_geo.set_length(length);
+  try {
+    on_boxl_change();
+  } catch (std::exception const &err) {
+    runtimeErrorMsg() << err.what();
+  }
+}
+
+REGISTER_CALLBACK(mpi_set_box_length_local)
+
 void rescale_boxl(int dir, double d_new) {
+  assert(dir != 3 or ((box_geo.length()[0] == box_geo.length()[1]) and
+                      (box_geo.length()[1] == box_geo.length()[2])));
   double scale = (dir - 3) ? d_new * box_geo.length_inv()[dir]
                            : d_new * box_geo.length_inv()[0];
+
+  assert(scale > 0.);
+  veto_boxl_change(true);
 
   /* If shrinking, rescale the particles first. */
   if (scale <= 1.) {
@@ -118,9 +135,9 @@ void rescale_boxl(int dir, double d_new) {
   if (dir < 3) {
     auto box_l = box_geo.length();
     box_l[dir] = d_new;
-    mpi_set_box_length(box_l);
+    mpi_call_all(mpi_set_box_length_local, box_l);
   } else {
-    mpi_set_box_length({d_new, d_new, d_new});
+    mpi_call_all(mpi_set_box_length_local, Utils::Vector3d::broadcast(d_new));
   }
 
   if (scale > 1.) {
@@ -128,18 +145,16 @@ void rescale_boxl(int dir, double d_new) {
   }
 }
 
-void mpi_set_box_length_local(const Utils::Vector3d &length) {
-  box_geo.set_length(length);
-  on_boxl_change();
-}
-
-REGISTER_CALLBACK(mpi_set_box_length_local)
-
-void mpi_set_box_length(const Utils::Vector3d &length) {
+static void check_new_length(const Utils::Vector3d &length) {
   if (boost::algorithm::any_of(length,
                                [](double value) { return value <= 0; })) {
     throw std::domain_error("Box length must be >0");
   }
+  veto_boxl_change(false);
+}
+
+void mpi_set_box_length(const Utils::Vector3d &length) {
+  check_new_length(length);
 
   mpi_call_all(mpi_set_box_length_local, length);
 }

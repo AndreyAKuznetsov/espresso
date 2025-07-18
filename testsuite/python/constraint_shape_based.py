@@ -36,6 +36,9 @@ class ShapeBasedConstraintTest(ut.TestCase):
     box_l = 30.
     system = espressomd.System(box_l=3 * [box_l])
 
+    def setUp(self):
+        self.system.box_l = 3 * [self.box_l]
+
     def tearDown(self):
         self.system.part.clear()
         self.system.constraints.clear()
@@ -1067,6 +1070,29 @@ class ShapeBasedConstraintTest(ut.TestCase):
         # Reset
         system.non_bonded_inter[0, 1].lennard_jones.set_params(
             epsilon=0.0, sigma=0.0, cutoff=0.0, shift=0)
+
+    def test_exceptions(self):
+        system = self.system
+        box_l = self.box_l
+        wall = espressomd.shapes.Wall(normal=[0., 1., 0.], dist=0.)
+        constraint = espressomd.constraints.ShapeBasedConstraint(
+            shape=wall, particle_type=1)
+        system.constraints.add(constraint)
+        with self.assertRaisesRegex(Exception, "there are active constraints"):
+            system.box_l = 0.5 * system.box_l
+        np.testing.assert_allclose(np.copy(system.box_l), box_l, atol=1e-7)
+        with self.assertRaisesRegex(RuntimeError, "there are active constraints"):
+            system.change_volume_and_rescale_particles(
+                0.5 * system.box_l[0], "xyz")
+        np.testing.assert_allclose(np.copy(system.box_l), box_l, atol=1e-7)
+        system.constraints.remove(constraint)
+        system.box_l = 0.75 * system.box_l
+        np.testing.assert_allclose(
+            np.copy(system.box_l), 0.75 * box_l, atol=1e-7)
+        system.change_volume_and_rescale_particles(
+            0.5 * system.box_l[0], "xyz")
+        np.testing.assert_allclose(
+            np.copy(system.box_l), 0.75 * 0.5 * box_l, atol=1e-7)
 
 
 if __name__ == "__main__":

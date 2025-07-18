@@ -31,6 +31,7 @@
 #include "collision.hpp"
 #include "communication.hpp"
 #include "config.hpp"
+#include "constraints.hpp"
 #include "cuda_init.hpp"
 #include "cuda_interface.hpp"
 #include "cuda_utils.hpp"
@@ -268,6 +269,16 @@ void on_lbboundary_change() {
 #endif
 }
 
+void veto_boxl_change(bool skip_particle_checks) {
+  if (not skip_particle_checks) {
+    if (get_n_part() > 0) {
+      throw std::runtime_error(
+          "Cannot reset the box length when particles are present");
+    }
+  }
+  Constraints::constraints.veto_boxl_change();
+}
+
 void on_boxl_change(bool skip_method_adaption) {
   grid_changed_box_l(box_geo);
   /* Electrostatics cutoffs mostly depend on the system size,
@@ -289,6 +300,8 @@ void on_boxl_change(bool skip_method_adaption) {
     LBBoundaries::lb_init_boundaries();
 #endif
   }
+
+  Constraints::constraints.on_boxl_change();
 }
 
 void on_cell_structure_change() {

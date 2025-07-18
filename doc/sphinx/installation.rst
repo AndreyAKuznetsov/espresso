@@ -8,10 +8,10 @@ This chapter will describe how to get, compile and run the software.
 |es| releases are available as source code packages from the homepage [1]_.
 This is where new users should get the code. The code within release packages
 is tested and known to run on a number of platforms.
-Alternatively, people that want to use the newest features of |es| or that
-want to start contributing to the software can instead obtain the
+Alternatively, people who want to use the newest features of |es| or
+start contributing to the software can instead obtain the
 current development code via the version control system software  [2]_
-from |es|'s project page at Github  [3]_. This code might be not as well
+from |es|'s project page at GitHub  [3]_. This code might be not as well
 tested and documented as the release code; it is recommended to use this
 code only if you have already gained some experience in using |es|.
 
@@ -25,7 +25,7 @@ performance of the code. Therefore it is not possible to build a single
 binary that can satisfy all needs. For performance reasons a user
 should always activate only those features that are actually needed.
 This means, however, that learning how to compile is a necessary evil.
-The build system of |es| uses CMake [4]_ to compile
+The build system of |es| uses CMake to compile
 software easily on a wide range of platforms.
 
 .. _Requirements:
@@ -39,7 +39,7 @@ are required to be able to compile and use |es|:
 .. glossary::
 
     CMake
-        The build system is based on CMake.
+        The build system is based on CMake version 3 or later [4]_.
 
     C++ compiler
         The C++ core of |es| needs to be built by a C++14-capable compiler.
@@ -51,6 +51,11 @@ are required to be able to compile and use |es|:
     FFTW
         For some algorithms like P\ :math:`^3`\ M, |es| needs the FFTW library
         version 3 or later [5]_ for Fourier transforms, including header files.
+
+    CUDA
+        For some algorithms like P\ :math:`^3`\ M,
+        |es| provides GPU-accelerated implementations for NVIDIA GPUs.
+        We strongly recommend CUDA 12.0 or later [6]_.
 
     MPI
         An MPI library that implements the MPI standard version 1.2 is required
@@ -73,8 +78,29 @@ are required to be able to compile and use |es|:
     Python
         |es|'s main user interface relies on Python 3.
 
+        We strongly recommend using Python environments to isolate
+        packages required by |es| from packages installed system-wide.
+        This can be achieved using venv [7]_, conda [8]_, or any similar tool.
+        Inside an environment, commands of the form
+        ``sudo apt install python3-numpy python3-scipy``
+        can be rewritten as ``python3 -m pip install numpy scipy``,
+        and thus do not require root privileges.
+
+        Depending on your needs, you may choose to install all |es|
+        dependencies inside the environment, or only the subset of
+        dependencies not already satisfied by your workstation or cluster.
+        For the exact syntax to create and configure an environment,
+        please refer to the tool documentation.
+
     Cython
         Cython is used for connecting the C++ core to Python.
+
+        Python environment tools may allow you to install a Python executable
+        that is more recent than the system-wide Python executable.
+        Be aware this might lead to compatibility issues if Cython
+        accidentally picks up the system-wide :file:`Python.h` header file.
+        In that scenario, you will have to manually adapt the C++ compiler
+        include paths to find the correct :file:`Python.h` header file.
 
 
 .. _Installing requirements on Ubuntu Linux:
@@ -86,9 +112,9 @@ To compile |es| on Ubuntu 22.04 LTS, install the following dependencies:
 
 .. code-block:: bash
 
-    sudo apt install build-essential cmake cython3 python3-pip python3-numpy \
-      libboost-all-dev openmpi-common fftw3-dev libhdf5-dev libhdf5-openmpi-dev \
-      python3-scipy python3-opengl libgsl-dev freeglut3
+    sudo apt install build-essential cmake cython3 python3-dev openmpi-bin \
+      libboost-all-dev fftw3-dev libfftw3-mpi-dev libhdf5-dev libhdf5-openmpi-dev \
+      python3-pip python3-numpy python3-scipy python3-opengl libgsl-dev freeglut3
 
 Optionally the ccmake utility can be installed for easier configuration:
 
@@ -188,7 +214,7 @@ To use Jupyter Notebook, install the following packages:
 
 .. code-block:: bash
 
-    pip3 install --user nbformat notebook 'jupyter_contrib_nbextensions==0.5.1'
+    pip3 install --user 'nbformat==5.1.3' 'nbconvert==6.4.5' 'notebook==6.4.8' 'jupyter_contrib_nbextensions==0.5.1'
     jupyter contrib nbextension install --user
     jupyter nbextension enable rubberband/main
     jupyter nbextension enable exercise2/main
@@ -226,11 +252,11 @@ Installing requirements on Windows via WSL
 
 To run |es| on Windows, use the Linux subsystem. For that you need to
 
-* follow `these instructions <https://docs.microsoft.com/en-us/windows/wsl/install-win10>`__ to install Ubuntu
-* start Ubuntu (or open an Ubuntu tab in `Windows Terminal <https://www.microsoft.com/en-us/p/windows-terminal/9n0dx20hk701>`__)
+* follow `these instructions <https://learn.microsoft.com/en-us/windows/wsl/install>`__ to install Ubuntu
+* start Ubuntu (or open an Ubuntu tab in `Windows Terminal <https://apps.microsoft.com/detail/9n0dx20hk701?hl=en-us&gl=US>`__)
 * execute ``sudo apt update`` to prepare the installation of dependencies
 * optional step: If you have a NVIDIA graphics card available and want to make
-  use of |es|'s GPU acceleration, follow `these instructions <https://docs.nvidia.com/cuda/wsl-user-guide/index.html#ch03a-setting-up-cuda>`__
+  use of |es|'s GPU acceleration, follow `these instructions <https://docs.nvidia.com/cuda/wsl-user-guide/index.html>`__
   to set up CUDA.
 * follow the instructions for :ref:`Installing requirements on Ubuntu Linux`
 
@@ -404,15 +430,15 @@ General features
 -  ``THERMOSTAT_PER_PARTICLE`` Allows setting a per-particle friction
    coefficient for the Langevin and Brownian thermostats.
 
--  ``ROTATIONAL_INERTIA``
+-  ``ROTATIONAL_INERTIA`` Allows particles to have individual rotational inertia matrix eigenvalues.
+   When not built in, all eigenvalues are unity in simulation units.
 
 -  ``EXTERNAL_FORCES`` Allows to define an arbitrary constant force for each particle
    individually. Also allows to fix individual coordinates of particles,
    keep them at a fixed position or within a plane.
 
--  ``MASS`` Allows particles to have individual masses. Note that some analysis
-   procedures have not yet been adapted to take the masses into account
-   correctly.
+-  ``MASS`` Allows particles to have individual masses.
+   When not built in, all masses are unity in simulation units.
 
    .. seealso:: :attr:`espressomd.particle_data.ParticleHandle.mass`
 
@@ -971,3 +997,12 @@ ____
 
 .. [5]
    https://www.fftw.org/
+
+.. [6]
+   https://docs.nvidia.com/cuda/
+
+.. [7]
+   https://docs.python.org/3/library/venv.html
+
+.. [8]
+   https://conda.io/projects/conda/en/latest/user-guide/tasks/manage-environments.html
